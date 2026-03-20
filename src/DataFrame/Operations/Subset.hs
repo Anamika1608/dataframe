@@ -455,7 +455,7 @@ ghci> D.stratifiedSample (mkStdGen 42) 0.8 "label" df
 -}
 stratifiedSample ::
     forall a g.
-    (SplitGen g, RandomGen g, Columnable a) =>
+    (RandomGen g, Columnable a) =>
     g -> Double -> Expr a -> DataFrame -> DataFrame
 stratifiedSample gen p strataCol df =
     let col = case strataCol of
@@ -465,7 +465,7 @@ stratifiedSample gen p strataCol df =
         go _ [] = mempty
         go g (ixs : rest) =
             let stratum = rowsAtIndices ixs df
-                (g1, g2) = splitGen g
+                (g1, g2) = split g
              in sample g1 p stratum <> go g2 rest
      in go gen groups
 
@@ -479,7 +479,7 @@ ghci> D.stratifiedSplit (mkStdGen 42) 0.8 "label" df
 -}
 stratifiedSplit ::
     forall a g.
-    (SplitGen g, RandomGen g, Columnable a) =>
+    (RandomGen g, Columnable a) =>
     g -> Double -> Expr a -> DataFrame -> (DataFrame, DataFrame)
 stratifiedSplit gen p strataCol df =
     let col = case strataCol of
@@ -489,7 +489,7 @@ stratifiedSplit gen p strataCol df =
         go _ [] = (mempty, mempty)
         go g (ixs : rest) =
             let stratum = rowsAtIndices ixs df
-                (g1, g2) = splitGen g
+                (g1, g2) = split g
                 (tr, va) = randomSplit g1 p stratum
                 (trAcc, vaAcc) = go g2 rest
              in (tr <> trAcc, va <> vaAcc)

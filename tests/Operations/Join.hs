@@ -4,7 +4,9 @@
 
 module Operations.Join where
 
-import Data.Text (Text)
+import Assertions (assertExpectException)
+import Control.Exception (evaluate)
+import Data.Text (Text, unpack)
 import Data.These
 import qualified DataFrame as D
 import qualified DataFrame.Functions as F
@@ -25,6 +27,11 @@ df2 =
         [ ("key", D.fromList ["K0" :: Text, "K1", "K2"])
         , ("B", D.fromList ["B0" :: Text, "B1", "B2"])
         ]
+
+assertMissingJoinColumn :: String -> Text -> D.DataFrame -> Assertion
+assertMissingJoinColumn preface missingKey result = do
+    assertExpectException preface "Column not found" (evaluate (D.nRows result))
+    assertExpectException preface (unpack missingKey) (evaluate (D.nRows result))
 
 testInnerJoin :: Test
 testInnerJoin =
@@ -253,6 +260,38 @@ testOuterJoinWithCollisions =
             (D.sortBy [D.Asc (F.col @Text "key")] (fullOuterJoin ["key"] dfL dfR))
         )
 
+testInnerJoinMissingKey :: Test
+testInnerJoinMissingKey =
+    TestCase $
+        assertMissingJoinColumn
+            "Inner join should fail when the join key is missing"
+            "Cats"
+            (innerJoin ["Cats"] df1 df2)
+
+testLeftJoinMissingKey :: Test
+testLeftJoinMissingKey =
+    TestCase $
+        assertMissingJoinColumn
+            "Left join should fail when the join key is missing"
+            "Cats"
+            (leftJoin ["Cats"] df1 df2)
+
+testRightJoinMissingKey :: Test
+testRightJoinMissingKey =
+    TestCase $
+        assertMissingJoinColumn
+            "Right join should fail when the join key is missing"
+            "Animals"
+            (rightJoin ["Animals"] df1 df2)
+
+testFullOuterJoinMissingKey :: Test
+testFullOuterJoinMissingKey =
+    TestCase $
+        assertMissingJoinColumn
+            "Full outer join should fail when the join key is missing"
+            "Cats"
+            (fullOuterJoin ["Cats"] df1 df2)
+
 -- Empty DataFrame fixtures: same schema as df1/df2 but zero rows.
 emptyDf1 :: D.DataFrame
 emptyDf1 =
@@ -353,6 +392,10 @@ tests =
     , TestLabel "leftJoinWithCollisions" testLeftJoinWithCollisions
     , TestLabel "rightJoinWithCollisions" testRightJoinWithCollisions
     , TestLabel "outerJoinWithCollisions" testOuterJoinWithCollisions
+    , TestLabel "innerJoinMissingKey" testInnerJoinMissingKey
+    , TestLabel "leftJoinMissingKey" testLeftJoinMissingKey
+    , TestLabel "rightJoinMissingKey" testRightJoinMissingKey
+    , TestLabel "fullOuterJoinMissingKey" testFullOuterJoinMissingKey
     , TestLabel "innerJoinBothEmpty" testInnerJoinBothEmpty
     , TestLabel "innerJoinLeftEmpty" testInnerJoinLeftEmpty
     , TestLabel "innerJoinRightEmpty" testInnerJoinRightEmpty
