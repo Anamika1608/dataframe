@@ -11,6 +11,7 @@ import qualified Data.Vector.Unboxed as VU
 
 import Control.Exception
 import Data.Array
+import qualified Data.List as L
 import Data.Typeable (Typeable)
 import DataFrame.Display.Terminal.Colours
 import Type.Reflection (TypeRep)
@@ -84,17 +85,26 @@ columnsNotFound names callPoint columns =
         ++ T.unpack (T.intercalate ", " names)
         ++ " for operation "
         ++ T.unpack callPoint
-        ++ concatMap formatSuggestion names
+        ++ formatSuggestions names columns
         ++ "\n\n"
   where
-    formatSuggestion name = case guessColumnName name columns of
-        "" -> ""
-        guessed ->
-            "\n\tDid you mean "
-                ++ T.unpack guessed
-                ++ " for "
-                ++ T.unpack name
-                ++ "?"
+    formatSuggestions missingColumns availableColumns =
+        case traverse (`suggestColumnName` availableColumns) missingColumns of
+            Just guessedColumns
+                | not (null guessedColumns) ->
+                    "\n\tDid you mean "
+                        ++ formatColumnSuggestions guessedColumns
+                        ++ "?"
+            _ -> ""
+
+    suggestColumnName missingColumn availableColumns = case guessColumnName missingColumn availableColumns of
+        "" -> Nothing
+        guessed -> Just guessed
+
+    formatColumnSuggestions guessedColumns =
+        "["
+            ++ L.intercalate ", " (map (show . T.unpack) guessedColumns)
+            ++ "]"
 
 typeMismatchError :: String -> String -> String
 typeMismatchError givenType expectedType =

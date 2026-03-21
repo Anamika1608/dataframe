@@ -310,6 +310,19 @@ testInnerJoinMissingKeys =
             ["Animals", "Cats"]
             (innerJoin ["Animals", "Cats"] df1 df2)
 
+testInnerJoinMissingKeysSuggestion :: Test
+testInnerJoinMissingKeysSuggestion =
+    TestCase $
+        let typoDf =
+                D.fromNamedColumns
+                    [ ("hello", D.fromList ["H" :: Text])
+                    , ("world", D.fromList ["W" :: Text])
+                    ]
+         in assertExpectException
+                "Inner join should report consolidated suggestions for missing join keys"
+                "Did you mean [\"hello\", \"world\"]?"
+                (evaluate (D.nRows (innerJoin ["helo", "wrld"] typoDf typoDf)))
+
 -- Empty DataFrame fixtures: same schema as df1/df2 but zero rows.
 emptyDf1 :: D.DataFrame
 emptyDf1 =
@@ -415,6 +428,7 @@ tests =
     , TestLabel "rightJoinMissingKey" testRightJoinMissingKey
     , TestLabel "fullOuterJoinMissingKey" testFullOuterJoinMissingKey
     , TestLabel "innerJoinMissingKeys" testInnerJoinMissingKeys
+    , TestLabel "innerJoinMissingKeysSuggestion" testInnerJoinMissingKeysSuggestion
     , TestLabel "innerJoinBothEmpty" testInnerJoinBothEmpty
     , TestLabel "innerJoinLeftEmpty" testInnerJoinLeftEmpty
     , TestLabel "innerJoinRightEmpty" testInnerJoinRightEmpty
