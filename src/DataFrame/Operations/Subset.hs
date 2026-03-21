@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ExplicitNamespaces #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
@@ -48,6 +50,18 @@ import DataFrame.Operators
 import System.Random
 import Type.Reflection
 import Prelude hiding (filter, take)
+
+#if MIN_VERSION_random(1,3,0)
+type SplittableGen g = (SplitGen g, RandomGen g)
+
+splitForStratified :: SplittableGen g => g -> (g, g)
+splitForStratified = splitGen
+#else
+type SplittableGen g = RandomGen g
+
+splitForStratified :: SplittableGen g => g -> (g, g)
+splitForStratified = split
+#endif
 
 -- | O(k * n) Take the first n rows of a DataFrame.
 take :: Int -> DataFrame -> DataFrame
@@ -455,7 +469,7 @@ ghci> D.stratifiedSample (mkStdGen 42) 0.8 "label" df
 -}
 stratifiedSample ::
     forall a g.
-    (RandomGen g, Columnable a) =>
+    (SplittableGen g, Columnable a) =>
     g -> Double -> Expr a -> DataFrame -> DataFrame
 stratifiedSample gen p strataCol df =
     let col = case strataCol of
@@ -465,7 +479,7 @@ stratifiedSample gen p strataCol df =
         go _ [] = mempty
         go g (ixs : rest) =
             let stratum = rowsAtIndices ixs df
-                (g1, g2) = split g
+                (g1, g2) = splitForStratified g
              in sample g1 p stratum <> go g2 rest
      in go gen groups
 
@@ -479,7 +493,7 @@ ghci> D.stratifiedSplit (mkStdGen 42) 0.8 "label" df
 -}
 stratifiedSplit ::
     forall a g.
-    (RandomGen g, Columnable a) =>
+    (SplittableGen g, Columnable a) =>
     g -> Double -> Expr a -> DataFrame -> (DataFrame, DataFrame)
 stratifiedSplit gen p strataCol df =
     let col = case strataCol of
@@ -489,7 +503,7 @@ stratifiedSplit gen p strataCol df =
         go _ [] = (mempty, mempty)
         go g (ixs : rest) =
             let stratum = rowsAtIndices ixs df
-                (g1, g2) = split g
+                (g1, g2) = splitForStratified g
                 (tr, va) = randomSplit g1 p stratum
                 (trAcc, vaAcc) = go g2 rest
              in (tr <> trAcc, va <> vaAcc)

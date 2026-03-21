@@ -543,7 +543,8 @@ ghci> D.leftJoin ["key"] df other
 leftJoin :: [T.Text] -> DataFrame -> DataFrame -> DataFrame
 leftJoin = leftJoinWithCallPoint "leftJoin"
 
-leftJoinWithCallPoint :: T.Text -> [T.Text] -> DataFrame -> DataFrame -> DataFrame
+leftJoinWithCallPoint ::
+    T.Text -> [T.Text] -> DataFrame -> DataFrame -> DataFrame
 leftJoinWithCallPoint callPoint cs left right =
     let
         csSet = S.fromList cs
