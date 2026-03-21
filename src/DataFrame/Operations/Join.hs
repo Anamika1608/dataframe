@@ -187,7 +187,12 @@ ghci> D.innerJoin ["key"] df other
 @
 -}
 innerJoin :: [T.Text] -> DataFrame -> DataFrame -> DataFrame
-innerJoin cs left right =
+innerJoin cs left right
+    | D.null right || D.null left = D.empty
+    | otherwise = innerJoinNonEmpty cs left right
+
+innerJoinNonEmpty :: [T.Text] -> DataFrame -> DataFrame -> DataFrame
+innerJoinNonEmpty cs left right =
     let
         csSet = S.fromList cs
         leftRows = fst (D.dimensions left)
@@ -210,9 +215,7 @@ innerJoin cs left right =
                 let (!rIxs, !lIxs) = hashInnerKernel rightHashes leftHashes
                  in (lIxs, rIxs)
      in
-        if D.null right || D.null left
-            then D.empty
-            else assembleInner csSet left right leftIxs rightIxs
+        assembleInner csSet left right leftIxs rightIxs
 
 -- | Compute hashes for the given key column names in a DataFrame.
 buildHashColumn :: [T.Text] -> DataFrame -> VU.Vector Int
@@ -548,7 +551,13 @@ leftJoin = leftJoinWithCallPoint "leftJoin"
 
 leftJoinWithCallPoint ::
     T.Text -> [T.Text] -> DataFrame -> DataFrame -> DataFrame
-leftJoinWithCallPoint callPoint cs left right =
+leftJoinWithCallPoint callPoint cs left right
+    | D.null right || D.nRows right == 0 = left
+    | D.null left || D.nRows left == 0 = D.empty
+    | otherwise = leftJoinNonEmpty callPoint cs left right
+
+leftJoinNonEmpty :: T.Text -> [T.Text] -> DataFrame -> DataFrame -> DataFrame
+leftJoinNonEmpty callPoint cs left right =
     let
         csSet = S.fromList cs
         rightRows = fst (D.dimensions right)
@@ -565,14 +574,8 @@ leftJoinWithCallPoint callPoint cs left right =
             | otherwise =
                 hashLeftKernel leftHashes rightHashes
      in
-        if D.null right || D.nRows right == 0
-            then left
-            else
-                if D.null left || D.nRows left == 0
-                    then D.empty
-                    else
-                        -- rightIxs uses -1 as sentinel for "no match"
-                        assembleLeft csSet left right leftIxs rightIxs
+        -- rightIxs uses -1 as sentinel for "no match"
+        assembleLeft csSet left right leftIxs rightIxs
 
 {- | Hash-based left join kernel.
 Returns @(leftExpandedIndices, rightExpandedIndices)@ where
@@ -826,7 +829,13 @@ rightJoin cs left right = leftJoinWithCallPoint "rightJoin" cs right left
 
 fullOuterJoin ::
     [T.Text] -> DataFrame -> DataFrame -> DataFrame
-fullOuterJoin cs left right =
+fullOuterJoin cs left right
+    | D.null right || D.nRows right == 0 = left
+    | D.null left || D.nRows left == 0 = right
+    | otherwise = fullOuterJoinNonEmpty cs left right
+
+fullOuterJoinNonEmpty :: [T.Text] -> DataFrame -> DataFrame -> DataFrame
+fullOuterJoinNonEmpty cs left right =
     let
         csSet = S.fromList cs
         leftRows = fst (D.dimensions left)
@@ -844,14 +853,8 @@ fullOuterJoin cs left right =
             | otherwise =
                 hashFullOuterKernel leftHashes rightHashes
      in
-        if D.null right || D.nRows right == 0
-            then left
-            else
-                if D.null left || D.nRows left == 0
-                    then right
-                    else
-                        -- Both index vectors use -1 as sentinel
-                        assembleFullOuter csSet left right leftIxs rightIxs
+        -- Both index vectors use -1 as sentinel
+        assembleFullOuter csSet left right leftIxs rightIxs
 
 {- | Hash-based full outer join kernel.
 Builds compact indices on both sides.
