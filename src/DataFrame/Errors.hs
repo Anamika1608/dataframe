@@ -68,28 +68,31 @@ instance Show DataFrameException where
             ++ T.unpack expr2
 
 columnNotFound :: T.Text -> T.Text -> [T.Text] -> String
-columnNotFound name callPoint columns =
-    red "\n\n[ERROR] "
-        ++ "Column not found: "
-        ++ T.unpack name
-        ++ " for operation "
-        ++ T.unpack callPoint
-        ++ "\n\tDid you mean "
-        ++ T.unpack (guessColumnName name columns)
-        ++ "?\n\n"
+columnNotFound name callPoint = columnsNotFound [name] callPoint
 
 columnsNotFound :: [T.Text] -> T.Text -> [T.Text] -> String
-columnsNotFound names callPoint columns =
+columnsNotFound missingColumns callPoint availableColumns =
     red "\n\n[ERROR] "
-        ++ "Columns not found: "
-        ++ T.unpack (T.intercalate ", " names)
+        ++ missingColumnsLabel missingColumns
+        ++ ": "
+        ++ T.unpack (T.intercalate ", " missingColumns)
         ++ " for operation "
         ++ T.unpack callPoint
-        ++ formatSuggestions names columns
+        ++ formatSuggestions missingColumns availableColumns
         ++ "\n\n"
   where
-    formatSuggestions missingColumns availableColumns =
-        case traverse (`suggestColumnName` availableColumns) missingColumns of
+    missingColumnsLabel [_] = "Column not found"
+    missingColumnsLabel _ = "Columns not found"
+
+    formatSuggestions [missingColumn] columns =
+        case guessColumnName missingColumn columns of
+            "" -> ""
+            guessed ->
+                "\n\tDid you mean "
+                    ++ T.unpack guessed
+                    ++ "?"
+    formatSuggestions names columns =
+        case traverse (`suggestColumnName` columns) names of
             Just guessedColumns
                 | not (null guessedColumns) ->
                     "\n\tDid you mean "
@@ -97,7 +100,7 @@ columnsNotFound names callPoint columns =
                         ++ "?"
             _ -> ""
 
-    suggestColumnName missingColumn availableColumns = case guessColumnName missingColumn availableColumns of
+    suggestColumnName missingColumn columns = case guessColumnName missingColumn columns of
         "" -> Nothing
         guessed -> Just guessed
 
