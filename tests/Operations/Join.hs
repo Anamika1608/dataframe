@@ -28,10 +28,20 @@ df2 =
         , ("B", D.fromList ["B0" :: Text, "B1", "B2"])
         ]
 
+assertMissingJoinColumns :: String -> [Text] -> D.DataFrame -> Assertion
+assertMissingJoinColumns preface missingKeys result = do
+    assertExpectException
+        preface
+        (if length missingKeys == 1 then "Column not found" else "Columns not found")
+        (evaluate (D.nRows result))
+    mapM_
+        ( \missingKey ->
+            assertExpectException preface (unpack missingKey) (evaluate (D.nRows result))
+        )
+        missingKeys
+
 assertMissingJoinColumn :: String -> Text -> D.DataFrame -> Assertion
-assertMissingJoinColumn preface missingKey result = do
-    assertExpectException preface "Column not found" (evaluate (D.nRows result))
-    assertExpectException preface (unpack missingKey) (evaluate (D.nRows result))
+assertMissingJoinColumn preface missingKey = assertMissingJoinColumns preface [missingKey]
 
 testInnerJoin :: Test
 testInnerJoin =
@@ -292,6 +302,14 @@ testFullOuterJoinMissingKey =
             "Cats"
             (fullOuterJoin ["Cats"] df1 df2)
 
+testInnerJoinMissingKeys :: Test
+testInnerJoinMissingKeys =
+    TestCase $
+        assertMissingJoinColumns
+            "Inner join should report every missing join key"
+            ["Animals", "Cats"]
+            (innerJoin ["Animals", "Cats"] df1 df2)
+
 -- Empty DataFrame fixtures: same schema as df1/df2 but zero rows.
 emptyDf1 :: D.DataFrame
 emptyDf1 =
@@ -396,6 +414,7 @@ tests =
     , TestLabel "leftJoinMissingKey" testLeftJoinMissingKey
     , TestLabel "rightJoinMissingKey" testRightJoinMissingKey
     , TestLabel "fullOuterJoinMissingKey" testFullOuterJoinMissingKey
+    , TestLabel "innerJoinMissingKeys" testInnerJoinMissingKeys
     , TestLabel "innerJoinBothEmpty" testInnerJoinBothEmpty
     , TestLabel "innerJoinLeftEmpty" testInnerJoinLeftEmpty
     , TestLabel "innerJoinRightEmpty" testInnerJoinRightEmpty

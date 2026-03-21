@@ -30,6 +30,7 @@ data DataFrameException where
         DataFrameException
     AggregatedAndNonAggregatedException :: T.Text -> T.Text -> DataFrameException
     ColumnNotFoundException :: T.Text -> T.Text -> [T.Text] -> DataFrameException
+    ColumnsNotFoundException :: [T.Text] -> T.Text -> [T.Text] -> DataFrameException
     EmptyDataSetException :: T.Text -> DataFrameException
     InternalException :: T.Text -> DataFrameException
     NonColumnReferenceException :: T.Text -> DataFrameException
@@ -52,6 +53,7 @@ instance Show DataFrameException where
                 (callingFunctionName context)
                 errorString
     show (ColumnNotFoundException columnName callPoint availableColumns) = columnNotFound columnName callPoint availableColumns
+    show (ColumnsNotFoundException columnNames callPoint availableColumns) = columnsNotFound columnNames callPoint availableColumns
     show (EmptyDataSetException callPoint) = emptyDataSetError callPoint
     show (WrongQuantileNumberException q) = wrongQuantileNumberError q
     show (WrongQuantileIndexException qs q) = wrongQuantileIndexError qs q
@@ -74,6 +76,25 @@ columnNotFound name callPoint columns =
         ++ "\n\tDid you mean "
         ++ T.unpack (guessColumnName name columns)
         ++ "?\n\n"
+
+columnsNotFound :: [T.Text] -> T.Text -> [T.Text] -> String
+columnsNotFound names callPoint columns =
+    red "\n\n[ERROR] "
+        ++ "Columns not found: "
+        ++ T.unpack (T.intercalate ", " names)
+        ++ " for operation "
+        ++ T.unpack callPoint
+        ++ concatMap formatSuggestion names
+        ++ "\n\n"
+  where
+    formatSuggestion name = case guessColumnName name columns of
+        "" -> ""
+        guessed ->
+            "\n\tDid you mean "
+                ++ T.unpack guessed
+                ++ " for "
+                ++ T.unpack name
+                ++ "?"
 
 typeMismatchError :: String -> String -> String
 typeMismatchError givenType expectedType =
