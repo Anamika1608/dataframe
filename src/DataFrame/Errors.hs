@@ -68,7 +68,7 @@ instance Show DataFrameException where
             ++ T.unpack expr2
 
 columnNotFound :: T.Text -> T.Text -> [T.Text] -> String
-columnNotFound name callPoint = columnsNotFound [name] callPoint
+columnNotFound name = columnsNotFound [name]
 
 columnsNotFound :: [T.Text] -> T.Text -> [T.Text] -> String
 columnsNotFound missingColumns callPoint availableColumns =
