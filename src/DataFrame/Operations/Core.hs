@@ -859,7 +859,7 @@ columnAsVector expr df
         (Col name) -> case getColumn name df of
             Just col -> toVector col
             Nothing ->
-                Left $ 
+                Left $
                     ColumnsNotFoundException [name] "columnAsVector" (M.keys $ columnIndices df)
         _ -> case interpret df expr of
             Left e -> throw e
