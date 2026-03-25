@@ -222,7 +222,7 @@ _getColumnAsDouble name df = case getColumn name df of
                 SFalse -> Nothing
     Nothing ->
         throw $
-            ColumnNotFoundException name "_getColumnAsDouble" (M.keys $ columnIndices df)
+            ColumnsNotFoundException [name] "_getColumnAsDouble" (M.keys $ columnIndices df)
     _ -> Nothing -- Return a type mismatch error here.
 {-# INLINE _getColumnAsDouble #-}
 
@@ -237,7 +237,7 @@ optionalToDoubleVector =
 sum ::
     forall a. (Columnable a, Num a) => Expr a -> DataFrame -> a
 sum (Col name) df = case getColumn name df of
-    Nothing -> throw $ ColumnNotFoundException name "sum" (M.keys $ columnIndices df)
+    Nothing -> throw $ ColumnsNotFoundException [name] "sum" (M.keys $ columnIndices df)
     Just ((UnboxedColumn (column :: VU.Vector a'))) -> case testEquality (typeRep @a') (typeRep @a) of
         Just Refl -> VG.sum column
         Nothing -> 0

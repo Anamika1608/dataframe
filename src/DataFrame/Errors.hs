@@ -30,7 +30,6 @@ data DataFrameException where
         TypeErrorContext a b ->
         DataFrameException
     AggregatedAndNonAggregatedException :: T.Text -> T.Text -> DataFrameException
-    ColumnNotFoundException :: T.Text -> T.Text -> [T.Text] -> DataFrameException
     ColumnsNotFoundException :: [T.Text] -> T.Text -> [T.Text] -> DataFrameException
     EmptyDataSetException :: T.Text -> DataFrameException
     InternalException :: T.Text -> DataFrameException
@@ -53,7 +52,6 @@ instance Show DataFrameException where
                 (errorColumnName context)
                 (callingFunctionName context)
                 errorString
-    show (ColumnNotFoundException columnName callPoint availableColumns) = columnNotFound columnName callPoint availableColumns
     show (ColumnsNotFoundException columnNames callPoint availableColumns) = columnsNotFound columnNames callPoint availableColumns
     show (EmptyDataSetException callPoint) = emptyDataSetError callPoint
     show (WrongQuantileNumberException q) = wrongQuantileNumberError q
@@ -68,7 +66,7 @@ instance Show DataFrameException where
             ++ T.unpack expr2
 
 columnNotFound :: T.Text -> T.Text -> [T.Text] -> String
-columnNotFound name = columnsNotFound [name]
+columnNotFound missingColumn = columnsNotFound [missingColumn]
 
 columnsNotFound :: [T.Text] -> T.Text -> [T.Text] -> String
 columnsNotFound missingColumns callPoint availableColumns =

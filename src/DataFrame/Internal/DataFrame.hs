@@ -161,16 +161,16 @@ getColumn name df
 
 {- | Retrieves a column by name from the dataframe, throwing an exception if not found.
 
-This is an unsafe version of 'getColumn' that throws 'ColumnNotFoundException'
+This is an unsafe version of 'getColumn' that throws 'ColumnsNotFoundException'
 if the column does not exist. Use this when you are certain the column exists.
 
 ==== __Throws__
 
-* 'ColumnNotFoundException' - if the column with the given name does not exist
+* 'ColumnsNotFoundException' - if the column with the given name does not exist
 -}
 unsafeGetColumn :: T.Text -> DataFrame -> Column
 unsafeGetColumn name df = case getColumn name df of
-    Nothing -> throw $ ColumnNotFoundException name "" (M.keys $ columnIndices df)
+    Nothing -> throw $ ColumnsNotFoundException [name] "" (M.keys $ columnIndices df)
     Just col -> col
 
 {- | Checks if the dataframe is empty (has no columns).

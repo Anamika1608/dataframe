@@ -169,8 +169,8 @@ mkRowFromArgs names df i = V.map get (V.fromList names)
     get name = case getColumn name df of
         Nothing ->
             throw $
-                ColumnNotFoundException
-                    name
+                ColumnsNotFoundException
+                    [name]
                     "[INTERNAL] mkRowFromArgs"
                     (M.keys $ columnIndices df)
         Just (BoxedColumn column) -> toAny (column V.! i)
@@ -203,7 +203,7 @@ mkRowRep df names i = V.generate (L.length names) (\index -> get (names' V.! ind
             Just e -> toAny e
             Nothing -> throwError name
         Nothing ->
-            throw $ ColumnNotFoundException name "mkRowRep" (M.keys $ columnIndices df)
+            throw $ ColumnsNotFoundException [name] "mkRowRep" (M.keys $ columnIndices df)
 
 sortedIndexes' :: [Bool] -> V.Vector Row -> VU.Vector Int
 sortedIndexes' flipCompare rows = runST $ do

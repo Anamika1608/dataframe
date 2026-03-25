@@ -19,7 +19,7 @@ import qualified Data.Text as T
 import Data.Text.Encoding
 import Data.Time
 import Data.Time.Clock.POSIX (posixSecondsToUTCTime)
-import DataFrame.Errors (DataFrameException (ColumnNotFoundException))
+import DataFrame.Errors (DataFrameException (ColumnsNotFoundException))
 import DataFrame.Internal.Binary (littleEndianWord32)
 import qualified DataFrame.Internal.Column as DI
 import DataFrame.Internal.DataFrame (DataFrame)
@@ -179,8 +179,8 @@ _readParquetWithOpts extraConfig opts path = withFileBufferedOrSeekable extraCon
              in unless
                     (L.null missing)
                     ( throw
-                        ( ColumnNotFoundException
-                            (T.pack $ show missing)
+                        ( ColumnsNotFoundException
+                            missing
                             "readParquetWithOpts"
                             availableSelectedColumns
                         )

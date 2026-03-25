@@ -53,8 +53,8 @@ sortBy ::
 sortBy sortOrds df
     | any (`notElem` columnNames df) names =
         throw $
-            ColumnNotFoundException
-                (T.pack $ show $ names L.\\ columnNames df)
+            ColumnsNotFoundException
+                (names L.\\ columnNames df)
                 "sortBy"
                 (columnNames df)
     | otherwise =

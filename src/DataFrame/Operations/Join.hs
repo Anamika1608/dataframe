@@ -29,7 +29,7 @@ import qualified Data.Vector.Algorithms.Merge as VA
 import qualified Data.Vector.Unboxed as VU
 import qualified Data.Vector.Unboxed.Mutable as VUM
 import DataFrame.Errors (
-    DataFrameException (ColumnNotFoundException, ColumnsNotFoundException),
+    DataFrameException (ColumnsNotFoundException),
  )
 import DataFrame.Internal.Column as D
 import DataFrame.Internal.DataFrame as D
@@ -159,7 +159,6 @@ validatedKeyColIndices callPoint csSet df =
         missingKeys = S.toAscList (csSet `S.difference` M.keysSet columnIdxs)
      in case missingKeys of
             [] -> M.elems $ M.restrictKeys columnIdxs csSet
-            [missingKey] -> throw (ColumnNotFoundException missingKey callPoint (M.keys columnIdxs))
             _ -> throw (ColumnsNotFoundException missingKeys callPoint (M.keys columnIdxs))
 
 -- ============================================================

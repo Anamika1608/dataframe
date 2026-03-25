@@ -394,7 +394,7 @@ cloneColumn original new df
     | null df = throw (EmptyDataSetException "cloneColumn")
     | otherwise = fromMaybe
         ( throw $
-            ColumnNotFoundException original "cloneColumn" (M.keys $ columnIndices df)
+            ColumnsNotFoundException [original] "cloneColumn" (M.keys $ columnIndices df)
         )
         $ do
             column <- getColumn original df
@@ -485,7 +485,7 @@ renameSafe ::
 renameSafe orig new df
     | null df = throw (EmptyDataSetException "rename")
     | otherwise = fromMaybe
-        (Left $ ColumnNotFoundException orig "rename" (M.keys $ columnIndices df))
+        (Left $ ColumnsNotFoundException [orig] "rename" (M.keys $ columnIndices df))
         $ do
             columnIndex <- M.lookup orig (columnIndices df)
             let origRemoved = M.delete orig (columnIndices df)
@@ -859,7 +859,8 @@ columnAsVector expr df
         (Col name) -> case getColumn name df of
             Just col -> toVector col
             Nothing ->
-                Left $ ColumnNotFoundException name "columnAsVector" (M.keys $ columnIndices df)
+                Left $ 
+                    ColumnsNotFoundException [name] "columnAsVector" (M.keys $ columnIndices df)
         _ -> case interpret df expr of
             Left e -> throw e
             Right (TColumn col) -> toVector col
@@ -876,7 +877,7 @@ columnAsIntVector (Col name) df = case getColumn name df of
     Just col -> toIntVector col
     Nothing ->
         Left $
-            ColumnNotFoundException name "columnAsIntVector" (M.keys $ columnIndices df)
+            ColumnsNotFoundException [name] "columnAsIntVector" (M.keys $ columnIndices df)
 columnAsIntVector expr df = case interpret df expr of
     Left e -> throw e
     Right (TColumn col) -> toIntVector col
@@ -893,7 +894,10 @@ columnAsDoubleVector (Col name) df = case getColumn name df of
     Just col -> toDoubleVector col
     Nothing ->
         Left $
-            ColumnNotFoundException name "columnAsDoubleVector" (M.keys $ columnIndices df)
+            ColumnsNotFoundException
+                [name]
+                "columnAsDoubleVector"
+                (M.keys $ columnIndices df)
 columnAsDoubleVector expr df = case interpret df expr of
     Left e -> throw e
     Right (TColumn col) -> toDoubleVector col
@@ -910,7 +914,10 @@ columnAsFloatVector (Col name) df = case getColumn name df of
     Just col -> toFloatVector col
     Nothing ->
         Left $
-            ColumnNotFoundException name "columnAsFloatVector" (M.keys $ columnIndices df)
+            ColumnsNotFoundException
+                [name]
+                "columnAsFloatVector"
+                (M.keys $ columnIndices df)
 columnAsFloatVector expr df = case interpret df expr of
     Left e -> throw e
     Right (TColumn col) -> toFloatVector col
@@ -923,7 +930,10 @@ columnAsUnboxedVector (Col name) df = case getColumn name df of
     Just col -> toUnboxedVector col
     Nothing ->
         Left $
-            ColumnNotFoundException name "columnAsFloatVector" (M.keys $ columnIndices df)
+            ColumnsNotFoundException
+                [name]
+                "columnAsFloatVector"
+                (M.keys $ columnIndices df)
 columnAsUnboxedVector expr df = case interpret df expr of
     Left e -> throw e
     Right (TColumn col) -> toUnboxedVector col

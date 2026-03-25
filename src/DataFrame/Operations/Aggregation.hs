@@ -49,8 +49,8 @@ groupBy ::
 groupBy names df
     | any (`notElem` columnNames df) names =
         throw $
-            ColumnNotFoundException
-                (T.pack $ show $ names L.\\ columnNames df)
+            ColumnsNotFoundException
+                (names L.\\ columnNames df)
                 "groupBy"
                 (columnNames df)
     | nRows df == 0 =

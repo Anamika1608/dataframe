@@ -482,7 +482,7 @@ eval _ (Lit v) = Right (Scalar v)
 eval (FlatCtx df) (Col name) =
     case getColumn name df of
         Nothing ->
-            Left $ ColumnNotFoundException name "" (M.keys $ columnIndices df)
+            Left $ ColumnsNotFoundException [name] "" (M.keys $ columnIndices df)
         Just c
             | hasElemType @a c -> Right (Flat c)
             | otherwise ->
@@ -500,8 +500,8 @@ eval (GroupCtx gdf) (Col name) =
     case getColumn name (fullDataframe gdf) of
         Nothing ->
             Left $
-                ColumnNotFoundException
-                    name
+                ColumnsNotFoundException
+                    [name]
                     ""
                     (M.keys $ columnIndices $ fullDataframe gdf)
         Just c
@@ -524,14 +524,14 @@ eval (FlatCtx df) (CastWith name _tag onResult) =
     case getColumn name df of
         Nothing ->
             Left $
-                ColumnNotFoundException name "" (M.keys $ columnIndices df)
+                ColumnsNotFoundException [name] "" (M.keys $ columnIndices df)
         Just c -> Flat <$> promoteColumnWith onResult c
 eval (GroupCtx gdf) (CastWith name _tag onResult) =
     case getColumn name (fullDataframe gdf) of
         Nothing ->
             Left $
-                ColumnNotFoundException
-                    name
+                ColumnsNotFoundException
+                    [name]
                     ""
                     (M.keys $ columnIndices $ fullDataframe gdf)
         Just c -> do
@@ -579,8 +579,8 @@ eval (GroupCtx gdf) expr@(Agg (FoldAgg _ (Just seed) (f :: a -> b -> a)) (Col na
         case getColumn name (fullDataframe gdf) of
             Nothing ->
                 Left $
-                    ColumnNotFoundException
-                        name
+                    ColumnsNotFoundException
+                        [name]
                         ""
                         (M.keys $ columnIndices $ fullDataframe gdf)
             Just col ->
@@ -599,8 +599,8 @@ eval (GroupCtx gdf) expr@(Agg (FoldAgg _ Nothing (f :: a -> b -> a)) (Col name :
                 case getColumn name (fullDataframe gdf) of
                     Nothing ->
                         Left $
-                            ColumnNotFoundException
-                                name
+                            ColumnsNotFoundException
+                                [name]
                                 ""
                                 (M.keys $ columnIndices $ fullDataframe gdf)
                     Just col ->
@@ -617,8 +617,8 @@ eval
             case getColumn name (fullDataframe gdf) of
                 Nothing ->
                     Left $
-                        ColumnNotFoundException
-                            name
+                        ColumnsNotFoundException
+                            [name]
                             ""
                             (M.keys $ columnIndices $ fullDataframe gdf)
                 Just col ->
