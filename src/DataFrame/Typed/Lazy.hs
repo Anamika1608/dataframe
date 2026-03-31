@@ -72,8 +72,8 @@ module DataFrame.Typed.Lazy (
     SortOrder (..),
 ) where
 
-import qualified Data.Text as T
 import Data.Proxy (Proxy (..))
+import qualified Data.Text as T
 import GHC.TypeLits (KnownSymbol, Symbol, symbolVal)
 import Prelude hiding (filter, take)
 

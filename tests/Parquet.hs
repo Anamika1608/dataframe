@@ -42,7 +42,8 @@ testBothReadParquetPaths test =
         , test (DP._readParquetWithOpts (Just True) D.defaultParquetReadOptions)
         ]
 
-assertColumnNullability :: String -> [(T.Text, Bool)] -> D.DataFrame -> Assertion
+assertColumnNullability ::
+    String -> [(T.Text, Bool)] -> D.DataFrame -> Assertion
 assertColumnNullability label expected df =
     forM_ expected $ \(columnName, shouldBeNullable) ->
         assertBool
@@ -190,7 +191,10 @@ safeColumnsWithOpts =
                 (D.defaultParquetReadOptions{D.safeColumns = True})
                 "./tests/data/alltypes_plain.parquet"
 
-        assertEqual "safeColumnsWithOpts dimensions" (D.dimensions defaultDf) (D.dimensions safeDf)
+        assertEqual
+            "safeColumnsWithOpts dimensions"
+            (D.dimensions defaultDf)
+            (D.dimensions safeDf)
         assertColumnNullability
             "default read"
             [("id", False), ("bool_col", False)]
@@ -199,8 +203,12 @@ safeColumnsWithOpts =
             "safeColumns read"
             [("id", True), ("bool_col", True)]
             safeDf
-        assertBool "safeColumns id type" (hasElemType @(Maybe Int32) (unsafeGetColumn "id" safeDf))
-        assertBool "safeColumns bool_col type" (hasElemType @(Maybe Bool) (unsafeGetColumn "bool_col" safeDf))
+        assertBool
+            "safeColumns id type"
+            (hasElemType @(Maybe Int32) (unsafeGetColumn "id" safeDf))
+        assertBool
+            "safeColumns bool_col type"
+            (hasElemType @(Maybe Bool) (unsafeGetColumn "bool_col" safeDf))
 
 safeColumnsWithSelectedColumns :: Test
 safeColumnsWithSelectedColumns =
