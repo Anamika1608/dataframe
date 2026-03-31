@@ -4,6 +4,7 @@
 module Parquet where
 
 import Assertions (assertExpectException)
+import Control.Monad (forM_)
 import qualified DataFrame as D
 import qualified DataFrame.Functions as F
 import qualified DataFrame.IO.Parquet as DP
@@ -29,7 +30,7 @@ import DataFrame.Internal.Binary (
     word32ToLittleEndian,
     word64ToLittleEndian,
  )
-import DataFrame.Internal.Column (hasMissing)
+import DataFrame.Internal.Column (hasElemType, hasMissing)
 import DataFrame.Internal.DataFrame (unsafeGetColumn)
 import GHC.IO (unsafePerformIO)
 import Test.HUnit
@@ -40,6 +41,17 @@ testBothReadParquetPaths test =
         [ test D.readParquet
         , test (DP._readParquetWithOpts (Just True) D.defaultParquetReadOptions)
         ]
+
+assertColumnNullability :: String -> [(T.Text, Bool)] -> D.DataFrame -> Assertion
+assertColumnNullability label expected df =
+    forM_ expected $ \(columnName, shouldBeNullable) ->
+        assertBool
+            ( label
+                <> ": expected "
+                <> T.unpack columnName
+                <> if shouldBeNullable then " to be nullable" else " to be non-nullable"
+            )
+            (hasMissing (unsafeGetColumn columnName df) == shouldBeNullable)
 
 allTypesPlain :: Test
 allTypesPlain = testBothReadParquetPaths $ \readParquet ->
@@ -168,6 +180,51 @@ predicateUsesNonSelectedColumnWithOpts =
                 )
             )
         )
+
+safeColumnsWithOpts :: Test
+safeColumnsWithOpts =
+    TestCase $ do
+        defaultDf <- D.readParquet "./tests/data/alltypes_plain.parquet"
+        safeDf <-
+            D.readParquetWithOpts
+                (D.defaultParquetReadOptions{D.safeColumns = True})
+                "./tests/data/alltypes_plain.parquet"
+
+        assertEqual "safeColumnsWithOpts dimensions" (D.dimensions defaultDf) (D.dimensions safeDf)
+        assertColumnNullability
+            "default read"
+            [("id", False), ("bool_col", False)]
+            defaultDf
+        assertColumnNullability
+            "safeColumns read"
+            [("id", True), ("bool_col", True)]
+            safeDf
+        assertBool "safeColumns id type" (hasElemType @(Maybe Int32) (unsafeGetColumn "id" safeDf))
+        assertBool "safeColumns bool_col type" (hasElemType @(Maybe Bool) (unsafeGetColumn "bool_col" safeDf))
+
+safeColumnsWithSelectedColumns :: Test
+safeColumnsWithSelectedColumns =
+    TestCase $ do
+        df <-
+            D.readParquetWithOpts
+                ( D.defaultParquetReadOptions
+                    { D.selectedColumns = Just ["id", "bool_col"]
+                    , D.safeColumns = True
+                    }
+                )
+                "./tests/data/alltypes_plain.parquet"
+
+        assertEqual "safeColumnsWithSelectedColumns dimensions" (8, 2) (D.dimensions df)
+        assertColumnNullability
+            "safeColumns projected read"
+            [("id", True), ("bool_col", True)]
+            df
+        assertBool
+            "safeColumns projected id type"
+            (hasElemType @(Maybe Int32) (unsafeGetColumn "id" df))
+        assertBool
+            "safeColumns projected bool_col type"
+            (hasElemType @(Maybe Bool) (unsafeGetColumn "bool_col" df))
 
 predicateWithOptsAcrossFiles :: Test
 predicateWithOptsAcrossFiles =
@@ -1029,6 +1086,8 @@ tests =
     , rowRangeWithOpts
     , predicateWithOpts
     , predicateUsesNonSelectedColumnWithOpts
+    , safeColumnsWithOpts
+    , safeColumnsWithSelectedColumns
     , predicateWithOptsAcrossFiles
     , missingSelectedColumnWithOpts
     , mtCars

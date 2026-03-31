@@ -64,6 +64,7 @@ These options are applied in this order:
 1. predicate filtering
 2. column projection
 3. row range
+4. safe column promotion
 
 Column selection for @selectedColumns@ uses leaf column names only.
 -}
