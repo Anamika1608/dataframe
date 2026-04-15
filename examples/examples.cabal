@@ -61,6 +61,7 @@ executable examples
                    DataFrame.IO.JSON,
                    DataFrame.IO.Parquet,
                    DataFrame.IO.Parquet.Binary,
+                   DataFrame.IO.Parquet.Brotli,
                    DataFrame.IO.Parquet.Dictionary,
                    DataFrame.IO.Parquet.Levels,
                    DataFrame.IO.Parquet.Thrift,
@@ -133,6 +134,8 @@ executable examples
                       stm >= 2.5 && < 3,
                       filepath >= 1.4 && < 2,
                       Glob >= 0.10 && < 1,
+    if !os(windows)
+      build-depends: unix >= 2 && < 3
     if impl(ghc >= 9.12)
       build-depends: ghc-typelits-natnormalise == 0.9.3
     else
