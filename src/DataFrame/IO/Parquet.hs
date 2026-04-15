@@ -112,6 +112,11 @@ defaultParquetReadOptions =
 @
 ghci> D.readParquet ".\/data\/mtcars.parquet"
 @
+
+Current page decompression supports Parquet files using
+@UNCOMPRESSED@, @SNAPPY@, @GZIP@, @ZSTD@, and @BROTLI@ codecs.
+@LZ4@ and @LZ4_RAW@ pages still fail with an unsupported compression error.
+BROTLI pages require the @libbrotlidec@ shared library to be available at runtime.
 -}
 readParquet :: FilePath -> IO DataFrame
 readParquet = readParquetWithOpts defaultParquetReadOptions

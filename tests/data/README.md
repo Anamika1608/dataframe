@@ -241,6 +241,11 @@ It is meant to exercise reading of structured data where each value
 is smaller than 2GB but the combined uncompressed column chunk size
 is greater than 2GB.
 
+The repo keeps this fixture to verify BROTLI metadata/plumbing for a
+pathological structured column chunk. End-to-end tests should avoid
+materializing the full values, since doing so turns the regression into
+a memory stress test rather than a codec test.
+
 ## Float16 Files
 
 The files `float16_zeros_and_nans.parquet` and `float16_nonzeros_and_nans.parquet`

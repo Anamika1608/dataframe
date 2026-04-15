@@ -5,6 +5,7 @@
 * Add `DataFrame.Typed.Lazy` module — a type-safe lazy query pipeline combining compile-time schema tracking with deferred execution.
 * Add `fromCsv` function for parsing a CSV string directly into a DataFrame.
 * Add `DataKinds` extension and `DataFrame.Typed` import to the GHCi file for easier interactive typed dataframe workflows.
+* Add BROTLI page decompression for Parquet reads and document the currently supported Parquet compression codecs.
 
 ### Performance
 * Specialize and inline aggregation functions (`sum`, `mean`, `variance`, `median`, `stddev`, etc.) to avoid expensive numeric conversions at runtime.

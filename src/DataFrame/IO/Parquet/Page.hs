@@ -2,6 +2,7 @@
 
 module DataFrame.IO.Parquet.Page where
 
+import qualified DataFrame.IO.Parquet.Brotli as Brotli
 import qualified Codec.Compression.GZip as GZip
 import qualified Codec.Compression.Zstd.Streaming as Zstd
 import Data.Bits
@@ -61,6 +62,7 @@ readPage c columnBytes =
                     Right res -> pure res
                 UNCOMPRESSED -> pure compressed
                 GZIP -> pure (LB.toStrict (GZip.decompress (BS.fromStrict compressed)))
+                BROTLI -> Brotli.decompress (fromIntegral (uncompressedPageSize hdr)) compressed
                 other -> error ("Unsupported compression type: " ++ show other)
             pure
                 ( Just $ Page hdr fullData

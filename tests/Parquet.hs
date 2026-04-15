@@ -9,12 +9,14 @@ import qualified DataFrame as D
 import qualified DataFrame.Functions as F
 import qualified DataFrame.IO.Parquet as DP
 import ParquetTestData (allTypes, mtCarsDataset, tinyPagesLast10, transactions)
+import ParquetTestHelpers (assertFirstColumnCodec, buildDataPageV1, encodePlainInt32Payload)
 
 import qualified Data.ByteString as BS
 import Data.Int
 import qualified Data.Set as S
 import qualified Data.Text as T
-import Data.Word
+import qualified Data.Vector.Unboxed as VU
+import DataFrame.IO.Parquet.Page (readNInt32Vec, readPage)
 import DataFrame.IO.Parquet.Thrift (
     columnMetaData,
     columnPathInSchema,
@@ -23,7 +25,14 @@ import DataFrame.IO.Parquet.Thrift (
     rowGroups,
     schema,
  )
-import DataFrame.IO.Parquet.Types (columnNullCount)
+import DataFrame.IO.Parquet.Types (
+    CompressionCodec (BROTLI),
+    Page (pageBytes, pageHeader),
+    PageHeader (pageHeaderPageType, pageTypeHeader),
+    PageType (DATA_PAGE),
+    PageTypeHeader (DataPageHeader, dataPageHeaderNumValues),
+    columnNullCount,
+ )
 import DataFrame.Internal.Binary (
     littleEndianWord32,
     littleEndianWord64,
@@ -427,11 +436,33 @@ concatenatedGzipMembers =
 largeBrotliMap :: Test
 largeBrotliMap =
     TestCase
-        ( assertExpectException
-            "largeBrotliMap"
-            "BROTLI"
-            (D.readParquet "./tests/data/large_string_map.brotli.parquet")
+        ( assertFirstColumnCodec
+            "largeBrotliMap codec"
+            BROTLI
+            "./tests/data/large_string_map.brotli.parquet"
         )
+
+brotliPageReader :: Test
+brotliPageReader =
+    TestCase $ do
+        let expectedPayload = encodePlainInt32Payload [1, 2, 3]
+        let compressedPayload = BS.pack [31, 11, 0, 248, 167, 1, 2, 4, 6, 86, 10, 162, 4, 0, 194, 30]
+        let encodedPage = buildDataPageV1 3 expectedPayload compressedPayload
+        (maybePage, remainder) <- readPage BROTLI encodedPage
+        assertEqual "brotliPageReader remainder" BS.empty remainder
+        case maybePage of
+            Nothing -> assertFailure "brotliPageReader: expected a decoded page"
+            Just page -> do
+                assertEqual "brotliPageReader page type" DATA_PAGE (pageHeaderPageType (pageHeader page))
+                case pageTypeHeader (pageHeader page) of
+                    DataPageHeader{dataPageHeaderNumValues = numValues} ->
+                        assertEqual "brotliPageReader num values" 3 numValues
+                    other ->
+                        assertFailure ("brotliPageReader: expected DataPageHeader, got " ++ show other)
+                assertEqual
+                    "brotliPageReader payload"
+                    [1 :: Int32, 2, 3]
+                    (VU.toList (readNInt32Vec 3 (pageBytes page)))
 
 -- ---------------------------------------------------------------------------
 -- Group 3: Delta / RLE encodings (unsupported → error tests)
@@ -1118,6 +1149,7 @@ tests =
     , lz4RawCompressedLarger
     , concatenatedGzipMembers
     , largeBrotliMap
+    , brotliPageReader
     , -- Group 3: delta / rle encodings
       deltaBinaryPacked
     , deltaByteArray
