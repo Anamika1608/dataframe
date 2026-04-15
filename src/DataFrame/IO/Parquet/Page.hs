@@ -2,7 +2,6 @@
 
 module DataFrame.IO.Parquet.Page where
 
-import qualified DataFrame.IO.Parquet.Brotli as Brotli
 import qualified Codec.Compression.GZip as GZip
 import qualified Codec.Compression.Zstd.Streaming as Zstd
 import Data.Bits
@@ -12,6 +11,7 @@ import Data.Int
 import Data.Maybe (fromMaybe)
 import qualified Data.Vector.Unboxed as VU
 import DataFrame.IO.Parquet.Binary
+import qualified DataFrame.IO.Parquet.Brotli as Brotli
 import DataFrame.IO.Parquet.Thrift
 import DataFrame.IO.Parquet.Types
 import DataFrame.Internal.Binary (

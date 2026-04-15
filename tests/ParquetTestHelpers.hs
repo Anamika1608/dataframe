@@ -4,7 +4,7 @@ module ParquetTestHelpers (
     encodePlainInt32Payload,
 ) where
 
-import Data.Bits ((.&.), (.|.), shiftL, shiftR, xor)
+import Data.Bits (shiftL, shiftR, xor, (.&.), (.|.))
 import qualified Data.ByteString as BS
 import Data.Int
 import Data.Word
@@ -62,7 +62,9 @@ fieldHeader delta encodedType = (delta `shiftL` 4) .|. encodedType
 zigZag32 :: Int32 -> [Word8]
 zigZag32 n =
     encodeVarInt
-        (fromIntegral (((fromIntegral n :: Word32) `shiftL` 1) `xor` fromIntegral (n `shiftR` 31)))
+        ( fromIntegral
+            (((fromIntegral n :: Word32) `shiftL` 1) `xor` fromIntegral (n `shiftR` 31))
+        )
 
 encodeVarInt :: Word64 -> [Word8]
 encodeVarInt n

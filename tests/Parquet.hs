@@ -9,7 +9,11 @@ import qualified DataFrame as D
 import qualified DataFrame.Functions as F
 import qualified DataFrame.IO.Parquet as DP
 import ParquetTestData (allTypes, mtCarsDataset, tinyPagesLast10, transactions)
-import ParquetTestHelpers (assertFirstColumnCodec, buildDataPageV1, encodePlainInt32Payload)
+import ParquetTestHelpers (
+    assertFirstColumnCodec,
+    buildDataPageV1,
+    encodePlainInt32Payload,
+ )
 
 import qualified Data.ByteString as BS
 import Data.Int
@@ -453,7 +457,10 @@ brotliPageReader =
         case maybePage of
             Nothing -> assertFailure "brotliPageReader: expected a decoded page"
             Just page -> do
-                assertEqual "brotliPageReader page type" DATA_PAGE (pageHeaderPageType (pageHeader page))
+                assertEqual
+                    "brotliPageReader page type"
+                    DATA_PAGE
+                    (pageHeaderPageType (pageHeader page))
                 case pageTypeHeader (pageHeader page) of
                     DataPageHeader{dataPageHeaderNumValues = numValues} ->
                         assertEqual "brotliPageReader num values" 3 numValues
