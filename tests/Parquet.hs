@@ -20,6 +20,7 @@ import Data.Int
 import qualified Data.Set as S
 import qualified Data.Text as T
 import qualified Data.Vector.Unboxed as VU
+import Data.Word (Word32, Word64)
 import DataFrame.IO.Parquet.Page (readNInt32Vec, readPage)
 import DataFrame.IO.Parquet.Thrift (
     columnMetaData,
